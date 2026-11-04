@@ -1,0 +1,15 @@
+/bin/
+/artifacts/
+/dist/
+/.vs/
+*.user
+*.suo
+*.exe
+*.pdb
+*.zip
+*.log
+/Backups/
+device-diagnose*.txt
+Thumbs.db
+.DS_Store
+/显卡名称工具_发布版/

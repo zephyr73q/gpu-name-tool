@@ -1,0 +1,31 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build, test, and package
+        shell: powershell
+        run: .\scripts\package.ps1
+      - name: Upload portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpu-name-tool-windows-x64
+          path: |
+            dist/gpu-name-tool-windows-x64.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
