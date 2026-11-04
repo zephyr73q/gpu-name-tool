@@ -44,6 +44,21 @@
 
 仅打开程序不会修改设备设置。工具不会自动重启电脑。部分界面需要关闭重开，或手动重启 Windows 后，才会显示更新后的描述。
 
+## 可选的 Defender 扫描排除脚本
+
+仓库根目录提供用户添加的 [Defender.cmd](./Defender.cmd)。**它用于添加扫描排除项，不会关闭 Defender 或实时保护。** 主程序不依赖该脚本，构建、测试及主程序均不会自动调用它；当前便携 ZIP 也不包含此脚本。
+
+脚本会尝试添加以下两个目录到 Microsoft Defender Antivirus 的扫描排除列表：
+
+| 路径 | 实际范围 |
+| --- | --- |
+| CMD 所在目录（`%~dp0`） | 排除脚本所在的整个文件夹，并非只排除 `GpuNameTool.exe`。把脚本移动到其他文件夹会改变这一范围。 |
+| `%TEMP%\_temp_heu168yyds` | 脚本保留的额外临时目录排除项；本项目的主程序不使用该目录。 |
+
+仅在确认文件可信、理解以上范围且明确需要排除时，才手动右键脚本，选择“以管理员身份运行”。这些排除项会降低对应目录的扫描覆盖，不能保证解决所有检测，也不是文件安全的证明。脚本没有明确的成功提示，系统策略或权限限制可能阻止它生效；可在 Windows 安全中心的排除项列表核实结果。
+
+脚本不会自动撤销排除。需要移除时，在 **Windows 安全中心 → 病毒和威胁防护 → 管理设置 → 排除项 → 添加或删除排除项** 中，分别移除脚本实际所在目录和上述临时目录。可参考微软的 [排除项管理说明](https://support.microsoft.com/en-us/windows/security/threat-malware-protection/virus-and-threat-protection-in-the-windows-security-app) 与 [ExclusionPath 接口说明](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/defender/add-msft-mppreference)。
+
 ## 实现原理
 
 程序通过 Windows SetupAPI 枚举当前连接的显示适配器，再读取或写入选中设备实例下的 `DeviceDesc` 值：
@@ -54,7 +69,7 @@ HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\<设备实例 ID>
 
 新名称使用 `REG_SZ` 类型。恢复时会保留备份中的 `REG_SZ` 或 `REG_EXPAND_SZ` 类型以及未经展开的原始文本；如果原本不存在 `DeviceDesc`，恢复操作会删除该值。
 
-工具不会修改 `FriendlyName`、硬件 ID、固件、驱动文件、注册表权限、启动设置或 Windows 安全设置。Windows 或驱动可能拒绝或覆盖这项修改。部分界面优先显示 `FriendlyName`；不能保证名称变化会影响某个游戏或应用。
+主程序不会修改 `FriendlyName`、硬件 ID、固件、驱动文件、注册表权限、启动设置或 Windows 安全设置。Windows 或驱动可能拒绝或覆盖这项修改。部分界面优先显示 `FriendlyName`；不能保证名称变化会影响某个游戏或应用。
 
 微软参考：[设备描述属性](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/devpkey-device-devicedesc)、[SetupDiGetClassDevs](https://learn.microsoft.com/en-us/windows/win32/api/setupapi/nf-setupapi-setupdigetclassdevsw)。
 
@@ -101,6 +116,7 @@ scripts/package.ps1          构建、测试与打包
 .github/workflows/build.yml  Windows 自动构建
 README.md                    中文文档
 README.en.md                 英文文档
+Defender.cmd                 可选的扫描排除脚本（不由程序自动调用）
 ```
 
 生成的 EXE、压缩包、设备备份和本机诊断记录均不提交到 Git。本仓库包含独立编写的实现，不包含第三方优化包及其可执行文件。

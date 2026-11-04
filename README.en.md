@@ -44,6 +44,21 @@ For a prebuilt portable package, open a successful **Build and test** run on the
 
 Opening the application does not change device settings. It does not restart Windows automatically. Some interfaces need to be reopened or Windows restarted manually before the new description appears.
 
+## Optional Defender scan-exclusion script
+
+The repository root includes the user-added [Defender.cmd](./Defender.cmd). **It adds scan exclusions; it does not turn off Defender or real-time protection.** The main application does not require it. The application, build, and tests never invoke it automatically, and the current portable ZIP does not include it.
+
+The script attempts to add two directories to the Microsoft Defender Antivirus scan-exclusion list:
+
+| Path | Actual scope |
+| --- | --- |
+| The directory containing the CMD file (`%~dp0`) | The entire containing folder, not just `GpuNameTool.exe`. Moving the script to another folder changes this scope. |
+| `%TEMP%\_temp_heu168yyds` | An additional temporary-directory exclusion retained in the script; the main application does not use this directory. |
+
+Only run it manually as administrator if you have verified the files, understand these scopes, and specifically need the exclusions. Exclusions reduce scan coverage for the affected directories; they do not guarantee that every detection will be avoided or establish that a file is safe. The script does not show an explicit success message, and permissions or system policies may prevent changes. Check the exclusions list in Windows Security to confirm the result.
+
+The script does not remove exclusions automatically. To remove them, open **Windows Security → Virus & threat protection → Manage settings → Exclusions → Add or remove exclusions**, then remove both the actual directory containing the script and the temporary directory above. See Microsoft's [exclusion management guidance](https://support.microsoft.com/en-us/windows/security/threat-malware-protection/virus-and-threat-protection-in-the-windows-security-app) and [ExclusionPath API reference](https://learn.microsoft.com/en-us/previous-versions/windows/desktop/defender/add-msft-mppreference).
+
 ## How it works
 
 The application uses Windows SetupAPI to enumerate present display adapters, then reads or writes only the `DeviceDesc` value under the selected device instance:
@@ -54,7 +69,7 @@ HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\<device-instance-id>
 
 New descriptions use `REG_SZ`. Restore preserves the backed-up `REG_SZ` or `REG_EXPAND_SZ` type and unexpanded original text. If `DeviceDesc` did not exist, restore removes the value.
 
-The tool does not modify `FriendlyName`, hardware IDs, firmware, driver files, registry permissions, boot settings, or Windows security settings. Windows or a driver can deny or replace the change. Some interfaces prefer `FriendlyName`; a name change is not guaranteed to affect any particular game or application.
+The main application does not modify `FriendlyName`, hardware IDs, firmware, driver files, registry permissions, boot settings, or Windows security settings. Windows or a driver can deny or replace the change. Some interfaces prefer `FriendlyName`; a name change is not guaranteed to affect any particular game or application.
 
 Microsoft references: [device description property](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/devpkey-device-devicedesc) and [SetupDiGetClassDevs](https://learn.microsoft.com/en-us/windows/win32/api/setupapi/nf-setupapi-setupdigetclassdevsw).
 
@@ -101,6 +116,7 @@ scripts/package.ps1          Build, test, and package
 .github/workflows/build.yml  Windows CI
 README.md                    Chinese documentation
 README.en.md                 English documentation
+Defender.cmd                 Optional scan-exclusion script (never invoked automatically)
 ```
 
 Generated executables, packages, backups, and local diagnostics are excluded from Git. This repository contains the independently written implementation; it does not include the third-party optimization bundle or its executables.
